@@ -17,6 +17,7 @@ const si = require('systeminformation');
 const naturalSort = require('node-natural-sort')
 const mkdirp = require('mkdirp');
 const numeric = require('numeric')
+var _ = require('lodash');
 var moment = require('moment')
 var FontFaceObserver = require('fontfaceobserver');
 var content = document.getElementById("contentDiv")
@@ -31,7 +32,7 @@ exp.getMediaPath()
 var fileToSave
 var phonFileHeader = ['subj', 'runNum', 'sex', 'word', 'hit', 'freq', 'imagability', 'concreteness', 'meaning', 'posInWord', 'hasS', 'numLetters', 'rateOfFall', 'numSyl', 'isTarget', 'scrXpos', os.EOL]
 var semFileHeader = ['subj', 'runNum', 'sex', 'word', 'hit', 'numLetters', 'rateOfFall', 'numSyl', 'isTarget', 'scrXpos', os.EOL]
-var spaceFileHeader = ['subj', 'runNum', 'sex', 'word', 'hit', 'rateOfFall', 'isTarget', 'scrXpos', 'scrYpos', 'mouseX', 'mouseY', 'dxFromMouse', os.EOL]
+var spaceFileHeader = ['subj', 'runNum', 'sex', 'word', 'hit', 'numLetters', 'rateOfFall', 'isTarget', 'scrXpos', os.EOL]
 var currentFileHeader
 var subjID
 var sessID
@@ -39,17 +40,32 @@ var sexID
 var userDataPath = path.join(app.getPath('userData'),'Data')
 makeSureUserDataFolderIsThere()
 var savePath
+var taskTimeout
+var taskTimeoutTime = 30000 // 120 sec (2 min) = 120,000 ms
 var haatPhonStim = readCSV(path.resolve(exp.mediapath, 'HAATstimsPhon.csv'))
 var haatSemStim = readCSV(path.resolve(exp.mediapath, 'HAATstimsSem.csv'))
-var haatPhonInstructions = "phon"
-var haatSemInstructions = "sem"
-var haatSpatialInstructions = "spatial"
+var haatSpatialStim = readCSV(path.resolve(exp.mediapath, 'HAATstimsSpatial.csv'))
+var haatPhonInstructions = ["You will see words falling from the top of the screen. " +
+                    "Your goal is to use the mouse to hit the target words. " +
+                    "The target words are words that have the 's' sound. " +
+                    "BUT, not all words with the letter 's' make the correct sound. " +
+                    "Try to be as accurate as possible!"]
+var haatSemInstructions = ["You will see words falling from the top of the screen. " +
+                    "Your goal is to use the mouse to hit the target words. " +
+                    "The target words are words that name animals. " +
+                    "Try to be as accurate as possible!"]
+var haatSpatialInstructions = ["You will see shapes falling from the top of the screen. " +
+                    "Your goal is to use the mouse to hit the target shape. " +
+                    "Try to be as accurate as possible! " +
+                    "Your target is below."]
+var haatSpatialTargetShape = "laall"
 var canvas = document.getElementById('canvas')
 var ctx = canvas.getContext('2d')
 var font = new FontFaceObserver('filledBlock');
 font.load().then(function () {
-  console.log('*** My Family has loaded ***');
+  console.log('*** custom font loaded ***');
   canvas.style.fontFamily = 'filledBlock'
+  canvas.style.cursor = "auto"
   ctx.font = '48px filledBlock'
 });
 var nCols = 4
@@ -57,31 +73,38 @@ var textColumns = []
 var paddle = new Paddle(500, 500, 100, 20, "black");
 var mouseX = 0
 var mouseY = 0
-var word1 = new textComponent('one', textColumns[0], 200, 'black')
-var word2 = new textComponent('two', textColumns[1], 200, 'black')
-var word3 = new textComponent('three', textColumns[2], 200, 'black')
-var word4 = new textComponent('four', textColumns[3], 200, 'black')
+var word1 = new textComponent('one', textColumns[0], 0, 'black')
+var word2 = new textComponent('two', textColumns[1], 0, 'black')
+var word3 = new textComponent('three', textColumns[2], 0, 'black')
+var word4 = new textComponent('four', textColumns[3], 0, 'black')
 var allObstacles = []
 var slowSpeed = 2
-var fastSpeed = 4
-var stimIdx = 0
+var fastSpeed = 5
+var stimIdx
 var stimList
+var isFirstCycle = true
 var numberOfStims
 var d
 var gameArea = {
   canvas : canvas,
   ctx : ctx,
-  start : function() {
-    this.interval = setInterval(updateGameArea, 10);
-    textColumns = numeric.linspace(0, canvas.width, nCols+2)
-    textColumns = textColumns.slice(1,textColumns.length - 1)
-    textColumns = textColumns.map(element => element - (Math.round(textColumns[0]/3)));
-  },
   clear : function() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   },
   stop : function() {
     clearInterval(this.interval);
+    clearTimeout(taskTimeout)
+  },
+  start : function() {
+    stimIdx = 4
+    this.interval = setInterval(updateGameArea, 16);
+    textColumns = numeric.linspace(0, canvas.width, nCols+2)
+    textColumns = textColumns.slice(1,textColumns.length - 1)
+    textColumns = textColumns.map(element => element - (Math.round(textColumns[0]/3)));
+    taskTimeout = setTimeout(function () {
+      canvas.style.cursor = "auto"
+      stopGameAndOpenNav()
+    }, taskTimeoutTime)
   }
 }
 
@@ -212,15 +235,48 @@ function makeSureUserDataFolderIsThere(){
 function chooseFile() {
   console.log("Analyze a file!")
   dialog.showOpenDialog(
-    {title: "Video Treatment Analysis",
+    {title: "HAAT Analysis",
     defaultPath: savePath,
     properties: ["openFile"]},
   analyzeSelectedFile)
 }
 
 
-function analyzeSelectedFile(filePath) {
+function analyzeSelectedFile(theChosenOne) {
+  filePath = theChosenOne[0]
   console.log("file chosen: ", filePath)
+  data = readCSV(filePath)
+  len = data.length
+  console.log("number of data points: ", len)
+  onlyHits = _.filter(data, {'hit': "1" }).length;
+  onlyTargs = _.filter(data, {'isTarget': "1" }).length;
+  targsHit = _.filter(data, {'hit': "1", 'isTarget': "1" }).length;
+  hitAcc = _.round((targsHit/onlyHits)*100, 2);
+  totalAcc = _.round((targsHit/onlyTargs)*100, 2);
+  totalNumOfStimuli = len;
+  console.log("only hits: ", onlyHits)
+  console.log("only targs: ", onlyTargs)
+  console.log("targs hit: ", targsHit)
+  console.log("hit acc: ", hitAcc)
+  console.log("total acc: ", totalAcc)
+  console.log("total num of stim: ", totalNumOfStimuli)
+  alert("Accuracy score: " + totalAcc.toString() + "%")
+
+  // var textDiv = document.createElement("div")
+  // textDiv.style.textAlign = 'center'
+  // // total acc
+  // var totacc_p = document.createElement("p")
+  // var totacc_txt = document.createTextNode("Accuracy score: " + totalAcc.toString())
+  // totacc_p.appendChild(totacc_txt)
+  // textDiv.appendChild(totacc_p)
+  //
+  // var accOverlayDiv = document.createElement("div")
+  // accOverlayDiv.id = "accOverlayDiv"
+  // accOverlayDiv.style.textAlign = 'center'
+  // accOverlayDiv.style.position = "absolute"
+  // accOverlayDiv.style.zIndex = 1000
+  // accOverlayDiv.appendChild(textDiv)
+  // content.appendChild(accOverlayDiv)
 }
 
 
@@ -253,6 +309,8 @@ function clearScreen() {
   while (canvas.hasChildNodes()) {
     canvas.removeChild(canvas.lastChild)
   }
+  // itemToRemove = document.getElementById("accOverlayDiv")
+  // content.removeChild(itemToRemove)
   console.log("cleared the screen!")
 }
 
@@ -274,22 +332,68 @@ function showInstructions(txt) {
   var startBtnTxt = document.createTextNode("Start")
   startBtn.appendChild(startBtnTxt)
   startBtn.onclick = function() {
-    gameArea.start()
+    content.removeChild(instOverlayDiv)
+    setTimeout(function () {
+      canvas.style.cursor = "none"
+      gameArea.start()
+    }, 1000) // wait 1 sec before starting game
   }
   startBtnDiv.appendChild(startBtn)
-  var practiceBtnDiv = document.createElement("div")
-  var practiceBtn = document.createElement("button")
-  var practiceBtnTxt = document.createTextNode("Practice")
-  practiceBtn.appendChild(practiceBtnTxt)
-  practiceBtn.onclick = function() {
-    gameArea.start()
+  var instOverlayDiv = document.createElement("div")
+  instOverlayDiv.style.textAlign = 'center'
+  instOverlayDiv.style.position = "absolute"
+  instOverlayDiv.style.zIndex = 1000
+  instOverlayDiv.appendChild(textDiv)
+  instOverlayDiv.appendChild(lineBreak)
+  instOverlayDiv.appendChild(startBtnDiv)
+  instOverlayDiv.appendChild(lineBreak)
+  content.appendChild(instOverlayDiv)
+  return getTime()
+}
+
+
+function showInstructionsSpatial(txt) {
+  //trialOrder = shuffle(randomArray)
+  //totalAccArray = []
+  clearScreen()
+  var textDiv = document.createElement("div")
+  textDiv.style.textAlign = 'center'
+  var p = document.createElement("p")
+  var txtNode = document.createTextNode(txt)
+  p.appendChild(txtNode)
+  textDiv.appendChild(p)
+  var lineBreak = document.createElement("br")
+  var startBtnDiv = document.createElement("div")
+  var startBtn = document.createElement("button")
+  var startBtnTxt = document.createTextNode("Start")
+  startBtn.appendChild(startBtnTxt)
+  startBtn.onclick = function() {
+    content.removeChild(instOverlayDiv)
+    setTimeout(function () {
+      canvas.style.cursor = "none"
+      gameArea.start()
+    }, 1000) // wait 1 sec before starting game
   }
-  practiceBtnDiv.appendChild(practiceBtn)
-  content.appendChild(textDiv)
-  content.appendChild(lineBreak)
-  content.appendChild(startBtnDiv)
-  content.appendChild(lineBreak)
-  content.appendChild(practiceBtnDiv)
+  startBtnDiv.appendChild(startBtn)
+  var instOverlayDiv = document.createElement("div")
+  instOverlayDiv.style.textAlign = 'center'
+  instOverlayDiv.style.position = "absolute"
+  instOverlayDiv.style.zIndex = 1000
+  instOverlayDiv.appendChild(textDiv)
+  instOverlayDiv.appendChild(lineBreak)
+  instOverlayDiv.appendChild(lineBreak)
+  var targetShapeDiv = document.createElement("div")
+  targetShapeDiv.style.fontFamily = 'filledBlock'
+  targetShapeDiv.style.fontSize = '40px'
+  var targetShapeContents = document.createElement("p")
+  var textContents = document.createTextNode(haatSpatialTargetShape)
+  targetShapeContents.appendChild(textContents)
+  targetShapeDiv.appendChild(targetShapeContents)
+  instOverlayDiv.appendChild(targetShapeDiv)
+  instOverlayDiv.appendChild(lineBreak)
+  instOverlayDiv.appendChild(startBtnDiv)
+  instOverlayDiv.appendChild(lineBreak)
+  content.appendChild(instOverlayDiv)
   return getTime()
 }
 
@@ -419,48 +523,48 @@ function appendTrialDataToFile(fileHeader, fileToAppend, dataArray) {
 }
 
 
-// update keys object when a keydown event is detected
-function updateKeys() {
-  // gets called from: document.addEventListener('keydown', updateKeys);
-  iti = 1500 // milliseconds
-  fbTime = 750
-  keys.key = event.key
-  keys.time = performance.now() // gives ms
-  keys.rt = 0
-  console.log("key: " + keys.key)
-  if (keys.key === '1' || keys.key === '2') {
-    if (!isPractice) {
-      clearScreen()
-      accuracy = checkAccuracy()
-      totalAccArray.push(accuracy)
-      totalAcc = mean(totalAccArray)
-      console.log('total acc: ', totalAcc)
-      console.log("accuracy: ", accuracy)
-      keys.rt = getRT()
-      console.log("RT: ", keys.rt)
-      showFeedback(accuracy)
-      setTimeout(clearScreen, fbTime)
-      //['subj', 'session', 'assessment', 'level', 'stim1', 'stim2', 'correctResp', 'keyPressed', 'reactionTime', 'accuracy', os.EOL]
-      //appendTrialDataToFile(fileToSave, [subjID, sessID, 'PhonTx', level, trials[trialOrder[t]].stim1.trim(), trials[trialOrder[t]].stim2.trim(), trials[trialOrder[t]].correctResp.trim(), keys.key, keys.rt, accuracy])
-      //waitSecs(1.5)
-      setTimeout(function() {showNextTrial(level)}, iti + fbTime)
-    } else if (isPractice) {
-      clearScreen()
-      accuracy = checkAccuracy()
-      totalAccArray.push(accuracy)
-      totalAcc = mean(totalAccArray)
-      console.log('total acc: ', totalAcc)
-      console.log("accuracy: ", accuracy)
-      keys.rt = getRT()
-      console.log("RT: ", keys.rt)
-      showFeedback(accuracy)
-      setTimeout(clearScreen, fbTime)
-      setTimeout(function() {showNextPracticeTrial(level)}, iti + fbTime)
-    }
-  } else if (keys.key === 'ArrowLeft') {
-
-  }
-}
+// // update keys object when a keydown event is detected
+// function updateKeys() {
+//   // gets called from: document.addEventListener('keydown', updateKeys);
+//   iti = 1500 // milliseconds
+//   fbTime = 750
+//   keys.key = event.key
+//   keys.time = performance.now() // gives ms
+//   keys.rt = 0
+//   console.log("key: " + keys.key)
+//   if (keys.key === '1' || keys.key === '2') {
+//     if (!isPractice) {
+//       clearScreen()
+//       accuracy = checkAccuracy()
+//       totalAccArray.push(accuracy)
+//       totalAcc = mean(totalAccArray)
+//       console.log('total acc: ', totalAcc)
+//       console.log("accuracy: ", accuracy)
+//       keys.rt = getRT()
+//       console.log("RT: ", keys.rt)
+//       showFeedback(accuracy)
+//       setTimeout(clearScreen, fbTime)
+//       //['subj', 'session', 'assessment', 'level', 'stim1', 'stim2', 'correctResp', 'keyPressed', 'reactionTime', 'accuracy', os.EOL]
+//       //appendTrialDataToFile(fileToSave, [subjID, sessID, 'PhonTx', level, trials[trialOrder[t]].stim1.trim(), trials[trialOrder[t]].stim2.trim(), trials[trialOrder[t]].correctResp.trim(), keys.key, keys.rt, accuracy])
+//       //waitSecs(1.5)
+//       setTimeout(function() {showNextTrial(level)}, iti + fbTime)
+//     } else if (isPractice) {
+//       clearScreen()
+//       accuracy = checkAccuracy()
+//       totalAccArray.push(accuracy)
+//       totalAcc = mean(totalAccArray)
+//       console.log('total acc: ', totalAcc)
+//       console.log("accuracy: ", accuracy)
+//       keys.rt = getRT()
+//       console.log("RT: ", keys.rt)
+//       showFeedback(accuracy)
+//       setTimeout(clearScreen, fbTime)
+//       setTimeout(function() {showNextPracticeTrial(level)}, iti + fbTime)
+//     }
+//   } else if (keys.key === 'ArrowLeft') {
+//
+//   }
+// }
 
 
 function mean(arrayToAvg) {
@@ -531,6 +635,7 @@ function toggleNav() {
 function checkForEscape() {
   key = event.key
   if (key === "Escape" || key=== "q") {
+    canvas.style.cursor = "auto"
     console.log("Escape was pressed")
     openNav()
     nav.hidden = false
@@ -540,6 +645,16 @@ function checkForEscape() {
     gameArea.clear()
 
   }
+}
+
+function stopGameAndOpenNav() {
+  openNav()
+  nav.hidden = false
+  clearScreen()
+  resetVars()
+  gameArea.stop()
+  gameArea.clear()
+  analyzeSelectedFile([fileToSave])
 }
 
 
@@ -563,11 +678,11 @@ function getStarted() {
     console.log('session is: ', sessID)
     stopWebCamPreview()
     closeNav()
-    stimIdx = 0
+    //stimIdx = -1
     if (assessment === 'haatPhon') {
       stimList = shuffle(haatPhonStim)
       currentFileHeader = phonFileHeader
-      //showInstructions(haatPhonInstructions)
+      showInstructions(haatPhonInstructions)
       dir = path.join(savePath, 'PolarData', 'HAATPhon', getSubjID(), getSessID())
       if (!fs.existsSync(dir)) {
           mkdirp.sync(dir)
@@ -576,28 +691,28 @@ function getStarted() {
     } else if (assessment === 'haatSem') {
       stimList = shuffle(haatSemStim)
       currentFileHeader = semFileHeader
-      //showInstructions(haatSemInstructions)
+      showInstructions(haatSemInstructions)
       dir = path.join(savePath, 'PolarData', 'HAATSem', getSubjID(), getSessID())
       if (!fs.existsSync(dir)) {
           mkdirp.sync(dir)
         }
       fileToSave = path.join(dir,subjID+'_'+sessID+'_'+assessment+'_'+getDateStamp()+'.csv')
-    } else if (assessment === 'haatSpatial') {
+    } else if (assessment === 'haatSpace') {
       stimList = shuffle(haatSpatialStim)
       currentFileHeader = spaceFileHeader
-      //showInstructions(haatSpatialInstructions)
+      showInstructionsSpatial(haatSpatialInstructions)
       dir = path.join(savePath, 'PolarData', 'HAATSpatial', getSubjID(), getSessID())
       if (!fs.existsSync(dir)) {
           mkdirp.sync(dir)
         }
       fileToSave = path.join(dir,subjID+'_'+sessID+'_'+assessment+'_'+getDateStamp()+'.csv')
     }
-    word1.update(stimList[0].word,textColumns[0],0,'black',getRandomInt(slowSpeed,fastSpeed))
-    word2.update(stimList[1].word,textColumns[1],0,'black',getRandomInt(slowSpeed,fastSpeed))
-    word3.update(stimList[2].word,textColumns[2],0,'black',getRandomInt(slowSpeed,fastSpeed))
-    word4.update(stimList[3].word,textColumns[3],0,'black',getRandomInt(slowSpeed,fastSpeed))
+    word1.update(0, stimList[0].word, textColumns[0], 0, 'black', getRandomInt(slowSpeed,fastSpeed))
+    word2.update(1, stimList[1].word, textColumns[1], 0, 'black', getRandomInt(slowSpeed,fastSpeed))
+    word3.update(2, stimList[2].word, textColumns[2], 0, 'black', getRandomInt(slowSpeed,fastSpeed))
+    word4.update(3, stimList[3].word, textColumns[3], 0, 'black', getRandomInt(slowSpeed,fastSpeed))
     numberOfStims = stimList.length-1
-    gameArea.start()
+    //stimIdx = 4
   }
   closeNav()
 }
@@ -624,7 +739,11 @@ function textComponent(text, x, y, color) {
   this.bottom = this.y
   this.width = this.right - this.left;
   this.height = this.bottom - this.top;
-  this.update = function(newText, colIdx, newY, newColor, rateOfFall) {
+  this.listIdx = 0
+  this.update = function(listIdx, newText, colIdx, newY, newColor, rateOfFall) {
+    if (listIdx === undefined) {
+      listIdx = 0
+    }
     if (newText === undefined) {
       newText = 'text'
     }
@@ -637,6 +756,7 @@ function textComponent(text, x, y, color) {
     if (newColor === undefined) {
       newColor = this.color
     }
+    this.listIdx = listIdx
     this.rateOfFall = rateOfFall
     this.text = newText
     this.x = textColumns[colIdx]
@@ -741,42 +861,51 @@ function updateGameArea() {
     ctx.font = '48px arial';
   } else if (assessment === 'haatSem') {
     ctx.font = '48px arial';
-  } else if (assessment === 'haatSpatial') {
+  } else if (assessment === 'haatSpace') {
     ctx.font = '48px filledBlock';
   }
   drawText()
   updatePaddlePosition()
   paddle.draw()
-  for (i = 0; i < allObstacles.length; i += 1) {
-    var hit = 0
+  for (i = 0; i < allObstacles.length; i++) {
+    hit = 0
+    d = []
     if (paddle.crashWith(allObstacles[i])) {
       hit = 1
     }
+    var objIdx = allObstacles[i].listIdx
     if (assessment === 'haatPhon') {
       // phonFileHeader = ['subj', 'runNum', 'sex', 'word', 'hit', 'freq', 'imagability', 'concreteness', 'meaning', 'posInWord', 'hasS', 'numLetters', 'numVows xxx', 'numCons xxx', 'rateOfFall', 'numSyl', 'isTarget', 'scrXpos', 'scrYpos xxx', 'mouseX xxx', 'mouseY xxx', 'dxFromMouse xxx', os.EOL]
-      d = [subjID, sessID, sexID, stimList[stimIdx].word, hit, stimList[stimIdx].freq, stimList[stimIdx].imag, stimList[stimIdx].conc, stimList[stimIdx].meaning, stimList[stimIdx].posInWord, stimList[stimIdx].hasS, stimList[stimIdx].numLet, allObstacles[i].rateOfFall, stimList[stimIdx].numSyl, stimList[stimIdx].isTarget, i]
+      d = [subjID, sessID, sexID, stimList[objIdx].word, hit, stimList[objIdx].freq, stimList[objIdx].imag, stimList[objIdx].conc, stimList[objIdx].meaning, stimList[objIdx].posInWord, stimList[objIdx].hasS, stimList[objIdx].numLet, allObstacles[i].rateOfFall, stimList[objIdx].numSyl, stimList[objIdx].isTarget, allObstacles[i].x]
+
     } else if (assessment === 'haatSem') {
       //var semFileHeader = ['subj', 'runNum', 'sex', 'word', 'hit', 'numLetters', 'rateOfFall', 'numSyl', 'isTarget', 'scrXpos', os.EOL]
-      d = [subjID, sessID, sexID, stimList[stimIdx].word, hit, stimList[stimIdx].numLet, allObstacles[i].rateOfFall, stimList[stimIdx].numSyl, stimList[stimIdx].isTarget, allObstacles[i].x]
-    } else if (assessment === 'haatSpatial') {
-      d = ['space', 1,2,3, 'space']
+      d = [subjID, sessID, sexID, stimList[objIdx].word, hit, stimList[objIdx].numLet, allObstacles[i].rateOfFall, stimList[objIdx].numSyl, stimList[objIdx].isTarget, allObstacles[i].x]
+
+    } else if (assessment === 'haatSpace') {
+      d = [subjID, sessID, sexID, stimList[objIdx].word, hit, stimList[objIdx].word.length, allObstacles[i].rateOfFall, stimList[objIdx].isTarget, allObstacles[i].x]
+
     }
     // if hit
     if (hit > 0) {
       allObstacles[i].save(d)
-      stimIdx += 1
+      console.log("word: ", stimList[objIdx].word)
+      stimIdx++
       if (stimIdx > numberOfStims) {
         stimIdx = 0
       }
+      allObstacles[i].listIdx = stimIdx
       console.log("stimIdx: ", stimIdx)
-      allObstacles[i].update(stimList[stimIdx].word, i, 0, 'black', getRandomInt(slowSpeed, fastSpeed))
+      allObstacles[i].update(stimIdx, stimList[stimIdx].word, i, 0, 'black', getRandomInt(slowSpeed, fastSpeed))
     } else if (hit == 0 && allObstacles[i].y > canvas.height) {
       allObstacles[i].save(d)
-      stimIdx += 1
+      console.log("word: ", stimList[objIdx].word)
+      stimIdx++
       if (stimIdx > numberOfStims) {
         stimIdx = 0
       }
-      allObstacles[i].update(stimList[stimIdx].word, i, 0, 'black', getRandomInt(slowSpeed, fastSpeed))
+      allObstacles[i].listIdx = stimIdx
+      allObstacles[i].update(stimIdx, stimList[stimIdx].word, i, 0, 'black', getRandomInt(slowSpeed, fastSpeed))
       console.log("stimIdx: ", stimIdx)
     }
   }
@@ -815,5 +944,4 @@ function resetTrialNumber() {
 
 // event listeners that are active for the life of the application
 document.addEventListener('keyup', checkForEscape)
-document.addEventListener('keyup', updateKeys)
 window.addEventListener('mousemove', getMousePos, false);

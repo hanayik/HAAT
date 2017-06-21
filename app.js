@@ -17,6 +17,7 @@ const os = require("os");
 var platform = os.platform() + '_' + os.arch();
 var version = app.getVersion();
 app.setName("HAAT")
+app.commandLine.appendSwitch('ignore-gpu-blacklist');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -36,8 +37,8 @@ function createWindow () {
 
   // Open the DevTools.
   //mainWindow.webContents.openDevTools()
-  console.log('https://haat.herokuapp.com/'+'update/'+platform+'/'+version)
-  autoUpdater.setFeedURL('https://haat.herokuapp.com/'+'update/'+platform+'/'+version);
+  console.log('https://hit-and-avoid-tasks.herokuapp.com/'+'update/'+platform+'/'+version)
+  autoUpdater.setFeedURL('https://hit-and-avoid-tasks.herokuapp.com/'+'update/'+platform+'/'+version);
   autoUpdater.checkForUpdates()
 
   // Emitted when the window is closed.

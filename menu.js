@@ -46,14 +46,6 @@ const template = [
     label: 'Utilities',
     submenu: [
       {
-        label: 'Start Webcam Preview',
-        click() {startWebCamPreview()}
-      },
-      {
-        label: 'Stop Webcam Preview',
-        click() {stopWebCamPreview()}
-      },
-      {
         label: 'Show Data Folder',
         click() {openDataFolder()}
       },
@@ -90,7 +82,7 @@ const template = [
     submenu: [
       {
         label: 'Learn More',
-        click () { require('electron').shell.openExternal('http://electron.atom.io') }
+        click () { require('electron').shell.openExternal('https://cstar.sc.edu/') }
       }
     ]
   }
