@@ -41,23 +41,23 @@ var userDataPath = path.join(app.getPath('userData'),'Data')
 makeSureUserDataFolderIsThere()
 var savePath
 var taskTimeout
-var taskTimeoutTime = 30000 // 120 sec (2 min) = 120,000 ms
+var taskTimeoutTime = 120000 // 120 sec (2 min) = 120,000 ms
 var haatPhonStim = readCSV(path.resolve(exp.mediapath, 'HAATstimsPhon.csv'))
 var haatSemStim = readCSV(path.resolve(exp.mediapath, 'HAATstimsSem.csv'))
 var haatSpatialStim = readCSV(path.resolve(exp.mediapath, 'HAATstimsSpatial.csv'))
-var haatPhonInstructions = ["You will see words falling from the top of the screen. " +
-                    "Your goal is to use the mouse to hit the target words. " +
-                    "The target words are words that have the 's' sound. " +
-                    "BUT, not all words with the letter 's' make the correct sound. " +
-                    "Try to be as accurate as possible!"]
-var haatSemInstructions = ["You will see words falling from the top of the screen. " +
-                    "Your goal is to use the mouse to hit the target words. " +
-                    "The target words are words that name animals. " +
-                    "Try to be as accurate as possible!"]
-var haatSpatialInstructions = ["You will see shapes falling from the top of the screen. " +
-                    "Your goal is to use the mouse to hit the target shape. " +
-                    "Try to be as accurate as possible! " +
-                    "Your target is below."]
+var haatPhonInstructions = ["<h1>You will see words falling from the top of the screen. <br>" +
+                    "Your goal is to use the mouse to hit the target words. <br>" +
+                    "The target words are words that have the 's' sound. <br>" +
+                    "BUT, not all words with the letter 's' make the correct sound. <br>" +
+                    "Try to be as accurate as possible! </h1>"]
+var haatSemInstructions = ["<h1>You will see words falling from the top of the screen. <br>" +
+                    "Your goal is to use the mouse to hit the target words. <br>" +
+                    "The target words are words that name animals. <br>" +
+                    "Try to be as accurate as possible! </h1>"]
+var haatSpatialInstructions = ["<h1>You will see shapes falling from the top of the screen. <br>" +
+                    "Your goal is to use the mouse to hit the target shape. <br>" +
+                    "Try to be as accurate as possible! <br>" +
+                    "Your target is below. </h1><br>"]
 var haatSpatialTargetShape = "laall"
 var canvas = document.getElementById('canvas')
 var ctx = canvas.getContext('2d')
@@ -323,14 +323,16 @@ function showInstructions(txt) {
   var textDiv = document.createElement("div")
   textDiv.style.textAlign = 'center'
   var p = document.createElement("p")
-  var txtNode = document.createTextNode(txt)
-  p.appendChild(txtNode)
+  // var txtNode = document.createTextNode(txt)
+  // p.appendChild(txtNode)
+  p.innerHTML = txt
   textDiv.appendChild(p)
   var lineBreak = document.createElement("br")
   var startBtnDiv = document.createElement("div")
   var startBtn = document.createElement("button")
   var startBtnTxt = document.createTextNode("Start")
   startBtn.appendChild(startBtnTxt)
+  startBtn.className = "startBtn"
   startBtn.onclick = function() {
     content.removeChild(instOverlayDiv)
     setTimeout(function () {
@@ -359,14 +361,16 @@ function showInstructionsSpatial(txt) {
   var textDiv = document.createElement("div")
   textDiv.style.textAlign = 'center'
   var p = document.createElement("p")
-  var txtNode = document.createTextNode(txt)
-  p.appendChild(txtNode)
+  // var txtNode = document.createTextNode(txt)
+  // p.appendChild(txtNode)
+  p.innerHTML = txt
   textDiv.appendChild(p)
   var lineBreak = document.createElement("br")
   var startBtnDiv = document.createElement("div")
   var startBtn = document.createElement("button")
   var startBtnTxt = document.createTextNode("Start")
   startBtn.appendChild(startBtnTxt)
+  startBtn.className = "startBtn"
   startBtn.onclick = function() {
     content.removeChild(instOverlayDiv)
     setTimeout(function () {
