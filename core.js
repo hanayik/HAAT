@@ -61,12 +61,12 @@ var haatSpatialInstructions = ["<h1>You will see shapes falling from the top of 
 var haatSpatialTargetShape = "laall"
 var canvas = document.getElementById('canvas')
 var ctx = canvas.getContext('2d')
-var font = new FontFaceObserver('filledBlock');
+var font = new FontFaceObserver('customBlock');
 font.load().then(function () {
   console.log('*** custom font loaded ***');
-  canvas.style.fontFamily = 'filledBlock'
+  canvas.style.fontFamily = 'customBlock'
   canvas.style.cursor = "auto"
-  ctx.font = '48px filledBlock'
+  ctx.font = '48px customBlock'
 });
 var nCols = 4
 var textColumns = []
@@ -387,7 +387,7 @@ function showInstructionsSpatial(txt) {
   instOverlayDiv.appendChild(lineBreak)
   instOverlayDiv.appendChild(lineBreak)
   var targetShapeDiv = document.createElement("div")
-  targetShapeDiv.style.fontFamily = 'filledBlock'
+  targetShapeDiv.style.fontFamily = 'customBlock'
   targetShapeDiv.style.fontSize = '40px'
   var targetShapeContents = document.createElement("p")
   var textContents = document.createTextNode(haatSpatialTargetShape)
@@ -866,7 +866,7 @@ function updateGameArea() {
   } else if (assessment === 'haatSem') {
     ctx.font = '48px arial';
   } else if (assessment === 'haatSpace') {
-    ctx.font = '48px filledBlock';
+    ctx.font = '48px customBlock';
   }
   drawText()
   updatePaddlePosition()

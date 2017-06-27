@@ -1,6 +1,6 @@
 @font-face {
-    font-family: 'filledBlock';
-    src: url('./fonts/FILLEDBLOCK.ttf');
+    font-family: 'customBlock';
+    src: url('./fonts/BLOCK.ttf');
 }
 
 /*#canvas {font-family:FILLEDBLOCK} */
