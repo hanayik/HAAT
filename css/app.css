@@ -8,6 +8,7 @@
 body {
   transition: background-color .5s;
   font-family: "Lato", sans-serif;
+  overflow:hidden;
 }
 
 .container {
