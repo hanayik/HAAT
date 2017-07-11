@@ -17,6 +17,7 @@ const si = require('systeminformation');
 const naturalSort = require('node-natural-sort')
 const mkdirp = require('mkdirp');
 const numeric = require('numeric')
+var ipcRenderer = require('electron').ipcRenderer;
 var _ = require('lodash');
 var moment = require('moment')
 var FontFaceObserver = require('fontfaceobserver');
@@ -106,6 +107,11 @@ var gameArea = {
       stopGameAndOpenNav()
     }, taskTimeoutTime)
   }
+}
+
+function checkForUpdateFromRender() {
+  ipcRenderer.send('user-requests-update')
+  //alert('checked for update')
 }
 
 
