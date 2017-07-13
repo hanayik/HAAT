@@ -38,6 +38,11 @@ function createWindow () {
     slashes: true
   }))
 
+  mainWindow.webContents.on('did-finish-load', () => {
+    //mainWindow.webContents.send('showSpinner', 'whoooooooh!')
+  })
+
+
   // Open the DevTools.
   //mainWindow.webContents.openDevTools()
   console.log('https://hit-and-avoid-tasks.herokuapp.com/'+'update/'+platform+'/'+version)
@@ -51,6 +56,7 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
+
 
   function checkForMaxBrightness() {
     system.display.getBrightness().then(function(brightness) {
@@ -171,6 +177,9 @@ autoUpdater.on('update-available', function(){
   dialog.showMessageBox(mainWindow, dialogOptions , function (response) {
     updateResponse = response
     if (response == 1) {
+      console.log('showing spinner now...')
+      mainWindow.webContents.send('showSpinner', 'whoooooooh!')
+    } else {
 
     }
   })
