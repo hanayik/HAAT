@@ -121,6 +121,7 @@ ipcRenderer.on('showSpinner', function () {
   spinnerDiv.style.zIndex = "1000";
   content.appendChild(spinnerDiv)
   console.log("added spinner!")
+
 })
 
 

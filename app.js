@@ -1,4 +1,5 @@
 // app icon: http://www.flaticon.com/authors/dinosoftlabs
+//"osx-sign": "codesign --deep --force --verbose --sign 'PLJK232T8G' './dist/HAAT-darwin-x64/HAAT.app'",
 const electron = require('electron')
 const autoUpdater = electron.autoUpdater
 const Menu = electron.Menu
@@ -147,6 +148,7 @@ app.on('window-all-closed', function () {
 app.on('activate', function () {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
+  shouldShowMessageNow = false
   if (mainWindow === null) {
     createWindow()
   }

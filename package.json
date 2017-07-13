@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron app.js",
     "build-mac": "electron-packager . --out=dist --icon ./icon.icns --platform=darwin --overwrite --tmpdir=false",
-    "osx-sign": "codesign --deep --force --verbose --sign 'PLJK232T8G' './dist/HAAT-darwin-x64/HAAT.app'",
+    "osx-sign": "codesign --deep --force --verbose -s 'Developer ID Application: Taylor Hanayik' './dist/HAAT-darwin-x64/HAAT.app'",
     "startAppWithLogging": "'./dist/HAAT-darwin-x64/HAAT.app/Contents/MacOS/HAAT'"
   },
   "repository": {
