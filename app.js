@@ -29,8 +29,8 @@ let mainWindow
 
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600, fullscreen: false, webPreferences: {experimentalCanvasFeatures: true}})
-  mainWindow.maximize()
+  mainWindow = new BrowserWindow({width: 800, height: 600, fullscreen: true, webPreferences: {experimentalCanvasFeatures: true}})
+  //mainWindow.maximize()
 
   // and load the index.html of the app.
   mainWindow.loadURL(url.format({
