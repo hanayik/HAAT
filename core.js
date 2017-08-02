@@ -129,7 +129,7 @@ ipcRenderer.on('showSpinner', function () {
 
 
 function getSubjID() {
-  var subjID = document.getElementById("subjID").value
+  var subjID = document.getElementById("subjID").value.trim()
   if (subjID === '') {
     subjID = '0'
   }
@@ -137,7 +137,7 @@ function getSubjID() {
 }
 
 function getSessID() {
-  var sessID = document.getElementById("sessID").value
+  var sessID = document.getElementById("sessID").value.trim()
   if (sessID === '') {
     sessID = '0'
   }
@@ -145,7 +145,7 @@ function getSessID() {
 }
 
 function getSexID() {
-  var sexID = document.getElementById("sexID").value
+  var sexID = document.getElementById("sexID").value.trim()
   if (sexID === '') {
     sexID = 'NA'
   }
@@ -686,10 +686,10 @@ function resetVars() {
 
 function getStarted() {
   // resetVars()
-  subjID = document.getElementById("subjID").value
-  sessID = document.getElementById("sessID").value
-  sexID = document.getElementById("sexID").value
-  assessment = document.getElementById("assessmentID").value
+  subjID = document.getElementById("subjID").value.trim()
+  sessID = document.getElementById("sessID").value.trim()
+  sexID = document.getElementById("sexID").value.trim()
+  assessment = document.getElementById("assessmentID").value.trim()
   console.log("assessment chosen: ", assessment)
   if (subjID === '' || sessID === '' || assessment === '') {
     console.log ('subject, session, or assessment is blank')
