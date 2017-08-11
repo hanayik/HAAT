@@ -705,7 +705,7 @@ function getStarted() {
       stimList = shuffle(haatPhonStim)
       currentFileHeader = phonFileHeader
       showInstructions(haatPhonInstructions)
-      dir = path.join(savePath, 'PolarData', 'HAATPhon', getSubjID(), getSessID())
+      dir = path.join(savePath, 'HAATPhon', getSubjID(), getSessID())
       if (!fs.existsSync(dir)) {
           mkdirp.sync(dir)
         }
@@ -714,7 +714,7 @@ function getStarted() {
       stimList = shuffle(haatSemStim)
       currentFileHeader = semFileHeader
       showInstructions(haatSemInstructions)
-      dir = path.join(savePath, 'PolarData', 'HAATSem', getSubjID(), getSessID())
+      dir = path.join(savePath, 'HAATSem', getSubjID(), getSessID())
       if (!fs.existsSync(dir)) {
           mkdirp.sync(dir)
         }
@@ -723,7 +723,7 @@ function getStarted() {
       stimList = shuffle(haatSpatialStim)
       currentFileHeader = spaceFileHeader
       showInstructionsSpatial(haatSpatialInstructions)
-      dir = path.join(savePath, 'PolarData', 'HAATSpatial', getSubjID(), getSessID())
+      dir = path.join(savePath, 'HAATSpatial', getSubjID(), getSessID())
       if (!fs.existsSync(dir)) {
           mkdirp.sync(dir)
         }
