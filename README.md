@@ -11,7 +11,7 @@ This task was designed specifically to investigate non-language related cognitiv
 
 The saved data location will depend on your computer. The program automatically detects if you have Dropbox, or Box folders on your computer and tries to save to those locations first, in that order. If you do not wish to save to the cloud folders then uncheck that option in the menu bar. If the cloud saving option is unchecked, or those folders do not exist on your computer then the app will save to it's default MacOS location which is ``` ~/Library/Application Support/HAAT/data ```
 
-This app used my own [HapticJS](https://github.com/hanayik/hapticJS) npm module to provide haptic feedback to users with modern MacOS laptops that support haptic feedback using the touchpad
+This app uses my own [HapticJS](https://github.com/hanayik/hapticJS) npm module to provide haptic feedback to users with modern MacOS laptops that support haptic feedback using the touchpad
 
 
 
