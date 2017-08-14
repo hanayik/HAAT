@@ -17,6 +17,7 @@ const si = require('systeminformation');
 const naturalSort = require('node-natural-sort')
 const mkdirp = require('mkdirp');
 const numeric = require('numeric')
+var hapticjs = require('hapticjs')
 var ipcRenderer = require('electron').ipcRenderer;
 var _ = require('lodash');
 var moment = require('moment')
@@ -894,6 +895,7 @@ function updateGameArea() {
     d = []
     if (paddle.crashWith(allObstacles[i])) {
       hit = 1
+      hapticjs.vibrate()
     }
     var objIdx = allObstacles[i].listIdx
     if (assessment === 'haatPhon') {

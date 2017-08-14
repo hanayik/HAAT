@@ -45,6 +45,7 @@
     "electron-notifications": "^0.1.6",
     "electron-settings": "^3.0.10",
     "fontfaceobserver": "^2.0.13",
+    "hapticjs": "^1.0.5",
     "jQuery": "^1.7.4",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
