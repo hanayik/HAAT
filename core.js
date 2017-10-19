@@ -265,11 +265,13 @@ function analyzeSelectedFile(theChosenOne) {
   filePath = theChosenOne[0]
   console.log("file chosen: ", filePath)
   data = readCSV(filePath)
-  len = data.length
+  filteredData = _.filter(data, function(v) { return v.subj!==""; });
+  console.log(filteredData)
+  len = filteredData.length
   console.log("number of data points: ", len)
-  onlyHits = _.filter(data, {'hit': "1" }).length;
-  onlyTargs = _.filter(data, {'isTarget': "1" }).length;
-  targsHit = _.filter(data, {'hit': "1", 'isTarget': "1" }).length;
+  onlyHits = _.filter(filteredData, {'hit': "1" }).length;
+  onlyTargs = _.filter(filteredData, {'isTarget': "1" }).length;
+  targsHit = _.filter(filteredData, {'hit': "1", 'isTarget': "1" }).length;
   hitAcc = _.round((targsHit/onlyHits)*100, 2);
   totalAcc = _.round((targsHit/onlyTargs)*100, 2);
   totalNumOfStimuli = len;
